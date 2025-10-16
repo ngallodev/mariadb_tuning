@@ -1,13 +1,13 @@
 # Contributors
 
-This project was developed collaboratively by multiple AI assistants working with the project owner.
+This project was developed using AI-assisted development.
 
 ## Project Owner
 - **Nate Gallo** ([@ngallodev](https://github.com/ngallodev))
   - Project creator and maintainer
   - System architecture and requirements
 
-## AI Contributors
+## AI Development
 
 ### Claude Code (Anthropic)
 - Initial project structure and implementation
@@ -15,30 +15,19 @@ This project was developed collaboratively by multiple AI assistants working wit
 - File format support implementation validation
 - Integration test development for CSV, TSV, and custom delimiters
 - Test suite condensation and optimization
-- Documentation (CLAUDE.md, SESSION_HANDOFF.md updates)
+- Documentation (CLAUDE.md, SESSION_HANDOFF.md, README.md)
 - Git repository setup and initial commit
 
-### Codex (OpenAI)
-- Code review and quality assurance
-- Test suite refinement and cleanup
-- Integration test optimization
-- SQL script validation and corrections
-- Documentation review and updates
-- Task tracking and project management
+## Development Model
 
-## Collaboration Model
-
-This project uses a dual-AI workflow:
-- **Claude Code**: Primary development and testing
-- **Codex**: Code review, validation, and refinement
-
-Each contributor is identified in `task_status.log` with their signature:
-- Entries ending with `- Claude` were completed by Claude Code
-- Entries ending with `- Codex` were completed by Codex
+This project was developed using Claude Code for:
+- Primary development and testing
+- Code structure and architecture
+- Test suite creation and validation
+- Documentation and guides
 
 ## Acknowledgments
 
 Special thanks to:
 - The MariaDB community for excellent documentation
 - Open source contributors who inspired this dual-mode architecture
-- AI safety researchers who helped establish collaborative AI workflows

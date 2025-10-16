@@ -435,11 +435,10 @@ For issues or questions:
 
 ## Contributors
 
-This project was developed collaboratively using AI-assisted development:
+This project was developed using AI-assisted development:
 
 - **Nate Gallo** ([@ngallodev](https://github.com/ngallodev)) - Project creator and maintainer
 - **Claude Code** (Anthropic) - Primary development, test suite, and documentation
-- **Codex** (OpenAI) - Code review, validation, and refinement
 
 See [CONTRIBUTORS.md](CONTRIBUTORS.md) for detailed contribution breakdown.
 
