@@ -1,0 +1,23 @@
+# Task Status Log - MariaDB Scripts Project
+# APPEND ONLY - Never edit previous entries, only add new ones
+# Format: YYYY-MM-DD HH:MMZ | tag | description
+
+2025-10-15 07:32Z | fix_documentation | Corrected SESSION_HANDOFF.md test counts: 128 total (106 unit + 22 integration), not 64 as previously claimed.
+2025-10-15 22:31Z | context_reset_prep | Initial preparation for context window reset
+2025-10-15 22:31Z | documentation | Created SESSION_HANDOFF.md with comprehensive project state documentation
+2025-10-15 22:31Z | task_tracking | Created .task_log for tracking completed tasks
+2025-10-15 22:31Z | documentation | Documented 3 next-session tasks in SESSION_HANDOFF.md
+2025-10-15 22:32Z | testing | Created comprehensive test suite - 128 tests, all passing
+2025-10-15 22:32Z | bugfix | Fixed sql_log_bin to be SESSION-only in preload/postload scripts
+2025-10-15 22:32Z | documentation | Created CLAUDE.md documentation for future Claude Code sessions
+2025-10-15 23:45Z | handoff | Created .NEXT_TASKS file with prioritized task list
+2025-10-15 23:45Z | handoff | All handoff documentation prepared for next session
+2025-10-16 06:45Z | review_notes | Added codex.md with findings and tuning recommendations for mariaDB scripts.
+2025-10-16 06:45Z | compare_updates | Compared updates/mariadb_preload.sql and updates/mariadb_postload.sql against originals and reported differences.
+2025-10-16 07:15Z | file_consolidation | Merged .task_log and task_status.log into single task_status.log file, eliminated .task_log
+2025-10-16 19:01Z | test_cleanup | Removed duplicate coverage from integration suite to rely on unit tests for option/existence checks - Codex.
+
+2025-10-16 07:45Z | testing | Condensed bulk_load unit tests from 10 to 3 tests (removed redundant edge cases) - Claude
+2025-10-16 07:45Z | testing | Added 3 integration tests for file format features (CSV, custom delimiter, tab-delimited) - Claude
+2025-10-16 07:45Z | task_complete | Task 2: Created focused integration tests for file format functionality - all passing - Claude
+2025-10-16 07:50Z | documentation | Updated task_status.log, .NEXT_TASKS, and CLAUDE.md to reflect completed work - Claude

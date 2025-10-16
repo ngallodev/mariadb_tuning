@@ -1,0 +1,170 @@
+# MariaDB Configuration for Multi-Role Server with Bulk Load Optimization
+# Server Specs: 256GB RAM, 2x Xeon 14-core (28 cores total)
+# 
+# DUAL-MODE STRATEGY:
+# - This config uses CONSERVATIVE settings for normal operations (~25% RAM)
+# - During bulk loads, SESSION and GLOBAL variables are temporarily increased
+# - After loads complete, settings are restored to conserve resources
+#
+# Place this in /etc/mysql/mariadb.conf.d/99-performance.cnf
+# Or add to your existing my.cnf file
+# After changes, restart MariaDB: systemctl restart mariadb
+
+[mysqld]
+
+# ===============================
+# InnoDB Buffer Pool Settings
+# ===============================
+# Conservative for multi-role server (25-30% of RAM = 64-80GB)
+# During bulk loads, additional buffers are set at SESSION level
+innodb_buffer_pool_size = 64G
+
+# Split buffer pool into instances (1-2GB per instance is optimal)
+# With 64GB, use 48 instances for better concurrency
+innodb_buffer_pool_instances = 48
+
+# ===============================
+# InnoDB Log Settings
+# ===============================
+# Moderate log files for normal operations (2GB each)
+# Larger = better write performance, slower crash recovery
+innodb_log_file_size = 2G
+innodb_log_buffer_size = 128M
+
+# For bulk loads, set to 2 (write to log, flush every second)
+# For production, use 1 (ACID compliant) or 2 (faster, slightly less durable)
+innodb_flush_log_at_trx_commit = 2
+
+# O_DIRECT avoids double buffering with OS cache
+innodb_flush_method = O_DIRECT
+
+# ===============================
+# InnoDB I/O Settings
+# ===============================
+# Moderate thread count for multi-role server
+# During bulk loads, the available cores still help with parallel I/O
+innodb_read_io_threads = 8
+innodb_write_io_threads = 8
+
+# Background threads for flushing
+innodb_purge_threads = 4
+
+# Maximum number of .ibd files open at once
+innodb_open_files = 2000
+
+# ===============================
+# InnoDB Performance Settings
+# ===============================
+# For bulk loads and large transactions
+innodb_change_buffering = all
+innodb_change_buffer_max_size = 50
+
+# LRU scan depth (lower = less CPU, higher = better eviction)
+innodb_lru_scan_depth = 2048
+
+# Use native AIO on Linux
+innodb_use_native_aio = 1
+
+# Disable adaptive hash index during bulk loads (can enable for OLTP)
+# innodb_adaptive_hash_index = OFF
+
+# ===============================
+# Connection Settings
+# ===============================
+# Moderate connections for multi-role server
+max_connections = 200
+
+# Thread cache to reuse threads
+thread_cache_size = 50
+
+# Maximum concurrent queries
+max_user_connections = 180
+
+# ===============================
+# Query Cache (Deprecated in newer versions)
+# ===============================
+# Note: Query cache is deprecated in MariaDB 10.x
+# If using older version:
+# query_cache_type = 0  # Disable for bulk loads
+# query_cache_size = 0
+
+# ===============================
+# Table and Temp Table Settings
+# ===============================
+# Memory tables - moderate for multi-role server
+tmp_table_size = 512M
+max_heap_table_size = 512M
+
+# Table cache
+table_open_cache = 2000
+table_definition_cache = 1000
+
+# ===============================
+# Buffer and Sort Settings
+# ===============================
+# Sort buffer (per connection, don't set too high)
+sort_buffer_size = 4M
+
+# Read buffer for sequential scans
+read_buffer_size = 2M
+
+# Random read buffer for sorting
+read_rnd_buffer_size = 4M
+
+# Join buffer
+join_buffer_size = 4M
+
+# MyISAM settings (if using MyISAM tables)
+key_buffer_size = 1G
+myisam_sort_buffer_size = 256M
+
+# Bulk insert buffer (increased during bulk loads via SESSION variables)
+bulk_insert_buffer_size = 64M
+
+# ===============================
+# Binary Logging (if needed)
+# ===============================
+# For bulk loads, you can disable binary logging
+# Comment out to disable:
+# log_bin = /var/log/mysql/mysql-bin.log
+# binlog_format = ROW
+# expire_logs_days = 7
+# max_binlog_size = 1G
+
+# Sync binlog (0 = faster, less durable; 1 = slower, most durable)
+# sync_binlog = 0  # For bulk loads
+# sync_binlog = 1  # For production
+
+# ===============================
+# Other Performance Settings
+# ===============================
+# Skip DNS lookups for faster connections
+skip_name_resolve = 1
+
+# Performance schema (can disable for bulk loads)
+performance_schema = OFF
+
+# ===============================
+# LOAD DATA INFILE Settings
+# ===============================
+# Allow local data loads
+local_infile = 1
+
+# Increase max packet size for large inserts
+max_allowed_packet = 1G
+
+# Increase network buffer
+net_buffer_length = 1M
+
+# ===============================
+# Parallel Operations (MariaDB 10.x)
+# ===============================
+# For parallel query execution
+# innodb_parallel_read_threads = 16
+
+# ===============================
+# Monitoring
+# ===============================
+# Slow query log (disable during bulk loads)
+# slow_query_log = 0
+# long_query_time = 2

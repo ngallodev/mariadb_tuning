@@ -1,0 +1,4 @@
+1	Alice	alice@example.com	2024-01-01	100.50
+2	Bob	bob@example.com	EXTRA_FIELD	2024-01-02	200.75
+3	Charlie	charlie@example.com	2024-01-03
+4	David	david@example.com	2024-01-04	300.00

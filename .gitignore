@@ -1,0 +1,32 @@
+# Backup files
+*.bak
+*.backup
+*~
+backup_*/
+
+# Temporary files
+*.tmp
+*.temp
+.DS_Store
+Thumbs.db
+
+# Test artifacts
+tests/tmp/
+*.log.tmp
+
+# Editor files
+*.swp
+*.swo
+*~
+.vscode/
+.idea/
+
+# Environment-specific files
+.env
+.env.local
+credentials.json
+
+# MySQL dumps (may contain sensitive data)
+*.sql.gz
+*.sql.zip
+dump_*.sql
