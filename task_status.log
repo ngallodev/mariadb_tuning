@@ -23,3 +23,5 @@
 2025-10-16 07:50Z | documentation | Updated task_status.log, .NEXT_TASKS, and CLAUDE.md to reflect completed work - Claude
 2025-10-16 08:15Z | git_setup | Initialized git repository and pushed to https://github.com/ngallodev/mariadb_tuning - Claude
 2025-10-16 08:20Z | documentation | Added Codex as contributor in CONTRIBUTORS.md and README.md - Claude
+2025-10-16 08:35Z | git_cleanup | Removed soharaa (Simon Ohara) from contributors - incorrect GitHub email mapping - Claude
+2025-10-16 08:35Z | git_rewrite | Rewrote git history to remove Co-Authored-By: Codex lines using git filter-branch - Claude
