@@ -43,7 +43,7 @@ SET GLOBAL innodb_flush_log_at_trx_commit = 1; -- Full ACID compliance
 SET GLOBAL innodb_flush_neighbors = 0;
 
 -- Restore log buffer to moderate size
-SET GLOBAL innodb_log_buffer_size = 128 * 1024 * 1024; -- 128MB
+-- SET GLOBAL innodb_log_buffer_size = 128 * 1024 * 1024; -- 128MB
 
 -- Re-enable adaptive hash index
 SET GLOBAL innodb_adaptive_hash_index = ON;

@@ -161,7 +161,7 @@ ORIG_QUERY_CACHE_TYPE=$(mysql $MYSQL_OPTS -sN -e "SELECT @@GLOBAL.query_cache_ty
 ORIG_QUERY_CACHE_SIZE=$(mysql $MYSQL_OPTS -sN -e "SELECT @@GLOBAL.query_cache_size;" 2>/dev/null || echo "0")
 ORIG_FLUSH_LOG=$(mysql $MYSQL_OPTS -sN -e "SELECT @@GLOBAL.innodb_flush_log_at_trx_commit;")
 ORIG_FLUSH_NEIGHBORS=$(mysql $MYSQL_OPTS -sN -e "SELECT @@GLOBAL.innodb_flush_neighbors;")
-ORIG_LOG_BUFFER=$(mysql $MYSQL_OPTS -sN -e "SELECT @@GLOBAL.innodb_log_buffer_size;")
+# ORIG_LOG_BUFFER=$(mysql $MYSQL_OPTS -sN -e "SELECT @@GLOBAL.innodb_log_buffer_size;")
 ORIG_ADAPTIVE_HASH=$(mysql $MYSQL_OPTS -sN -e "SELECT @@GLOBAL.innodb_adaptive_hash_index;")
 ORIG_CHANGE_BUFFER=$(mysql $MYSQL_OPTS -sN -e "SELECT @@GLOBAL.innodb_change_buffer_max_size;")
 ORIG_IO_CAPACITY=$(mysql $MYSQL_OPTS -sN -e "SELECT @@GLOBAL.innodb_io_capacity;")
@@ -182,7 +182,6 @@ cleanup() {
 -- Restore GLOBAL settings to original values
 SET GLOBAL innodb_flush_log_at_trx_commit = $ORIG_FLUSH_LOG;
 SET GLOBAL innodb_flush_neighbors = $ORIG_FLUSH_NEIGHBORS;
-SET GLOBAL innodb_log_buffer_size = $ORIG_LOG_BUFFER;
 SET GLOBAL innodb_adaptive_hash_index = $ORIG_ADAPTIVE_HASH;
 SET GLOBAL innodb_change_buffer_max_size = $ORIG_CHANGE_BUFFER;
 SET GLOBAL innodb_io_capacity = $ORIG_IO_CAPACITY;
@@ -208,7 +207,7 @@ SET GLOBAL query_cache_type = 0;
 SET GLOBAL query_cache_size = 0;
 SET GLOBAL innodb_flush_log_at_trx_commit = 0;
 SET GLOBAL innodb_flush_neighbors = 0;
-SET GLOBAL innodb_log_buffer_size = 256 * 1024 * 1024;
+-- SET GLOBAL innodb_log_buffer_size = 256 * 1024 * 1024;
 SET GLOBAL innodb_adaptive_hash_index = OFF;
 SET GLOBAL innodb_change_buffer_max_size = 50;
 SET GLOBAL innodb_io_capacity = 2000;
@@ -302,7 +301,7 @@ mysql $MYSQL_OPTS <<EOF
 -- Restore GLOBAL settings to original values
 SET GLOBAL innodb_flush_log_at_trx_commit = $ORIG_FLUSH_LOG;
 SET GLOBAL innodb_flush_neighbors = $ORIG_FLUSH_NEIGHBORS;
-SET GLOBAL innodb_log_buffer_size = $ORIG_LOG_BUFFER;
+-- SET GLOBAL innodb_log_buffer_size = $ORIG_LOG_BUFFER;
 SET GLOBAL innodb_adaptive_hash_index = $ORIG_ADAPTIVE_HASH;
 SET GLOBAL innodb_change_buffer_max_size = $ORIG_CHANGE_BUFFER;
 SET GLOBAL innodb_io_capacity = $ORIG_IO_CAPACITY;

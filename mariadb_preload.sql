@@ -25,7 +25,7 @@ SET GLOBAL innodb_flush_log_at_trx_commit = 0; -- Fastest, commits every ~1 seco
 SET GLOBAL innodb_flush_neighbors = 0; -- SSD optimization
 
 -- Increase log buffer
-SET GLOBAL innodb_log_buffer_size = 256 * 1024 * 1024; -- 256MB
+-- SET GLOBAL innodb_log_buffer_size = 256 * 1024 * 1024; -- 256MB
 
 -- Disable adaptive hash index during bulk load (can interfere)
 SET GLOBAL innodb_adaptive_hash_index = OFF;

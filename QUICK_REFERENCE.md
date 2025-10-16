@@ -9,7 +9,7 @@
 | **innodb_adaptive_hash_index** | ON | OFF | Prevents interference |
 | **innodb_io_capacity** | 200 | 2000 | 10x I/O throughput |
 | **innodb_io_capacity_max** | 2000 | 4000 | Max burst I/O |
-| **innodb_log_buffer_size** | 128MB | 256MB | 2x log buffer |
+<!-- | **innodb_log_buffer_size** | 128MB | 256MB | 2x log buffer | -->
 | **innodb_change_buffer_max_size** | 25% | 50% | 2x change buffering |
 | **bulk_insert_buffer_size** | 64MB | 512MB | 8x insert buffer |
 | **sort_buffer_size** | 4MB | 512MB | 128x sort performance |

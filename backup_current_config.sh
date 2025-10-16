@@ -96,7 +96,6 @@ WHERE VARIABLE_NAME IN (
     'innodb_buffer_pool_size',
     'innodb_buffer_pool_instances',
     'innodb_log_file_size',
-    'innodb_log_buffer_size',
     'innodb_flush_log_at_trx_commit',
     'innodb_flush_method',
     'innodb_io_capacity',
@@ -129,8 +128,7 @@ WHERE VARIABLE_NAME IN (
     'innodb_io_capacity',
     'innodb_io_capacity_max',
     'innodb_adaptive_hash_index',
-    'max_allowed_packet',
-    'innodb_log_buffer_size'
+    'max_allowed_packet'
 )
 ORDER BY VARIABLE_NAME;
 " 2>/dev/null >> "$BACKUP_DIR/restore_settings.sql"
