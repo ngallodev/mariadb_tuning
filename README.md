@@ -433,6 +433,16 @@ For issues or questions:
 3. Monitor system resources: `htop`, `iostat`, `free -h`
 4. Check MariaDB status: `systemctl status mariadb`
 
+## Contributors
+
+This project was developed collaboratively using AI-assisted development:
+
+- **Nate Gallo** ([@ngallodev](https://github.com/ngallodev)) - Project creator and maintainer
+- **Claude Code** (Anthropic) - Primary development, test suite, and documentation
+- **Codex** (OpenAI) - Code review, validation, and refinement
+
+See [CONTRIBUTORS.md](CONTRIBUTORS.md) for detailed contribution breakdown.
+
 ---
 
 **Note**: Always test these configurations on non-production data first. Backup your database before making configuration changes.

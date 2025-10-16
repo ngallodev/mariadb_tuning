@@ -1,0 +1,9 @@
+# Git mailmap for proper contributor attribution
+# See: https://git-scm.com/docs/git-check-mailmap
+
+# Project Owner
+Nate Gallo <ngallodev@users.noreply.github.com>
+
+# AI Contributors
+Claude <noreply@anthropic.com> Claude Code <noreply@anthropic.com>
+Codex <noreply@openai.com>
