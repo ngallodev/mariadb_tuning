@@ -66,10 +66,15 @@ echo ""
 # Delimiter detection
 echo -e "${GREEN}[3] Delimiter Detection (first 100 lines)${NC}"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-TABS=$(head -100 "$FILE" | grep -c $'\t' || echo 0)
-COMMAS=$(head -100 "$FILE" | grep -c ',' || echo 0)
-PIPES=$(head -100 "$FILE" | grep -c '|' || echo 0)
-SEMICOLONS=$(head -100 "$FILE" | grep -c ';' || echo 0)
+TABS=$(head -100 "$FILE" | grep -c $'\t' || true)
+COMMAS=$(head -100 "$FILE" | grep -c ',' || true)
+PIPES=$(head -100 "$FILE" | grep -c '|' || true)
+SEMICOLONS=$(head -100 "$FILE" | grep -c ';' || true)
+
+TABS=${TABS:-0}
+COMMAS=${COMMAS:-0}
+PIPES=${PIPES:-0}
+SEMICOLONS=${SEMICOLONS:-0}
 
 echo "  Lines with tabs:       $TABS"
 echo "  Lines with commas:     $COMMAS"
@@ -79,19 +84,19 @@ echo ""
 
 # Determine likely delimiter
 LIKELY_DELIMITER=""
-if [ $TABS -gt 50 ]; then
+if [ "${TABS:-0}" -gt 50 ]; then
     LIKELY_DELIMITER="TAB"
     echo -e "  ${GREEN}→ Likely delimiter: TAB (\\t)${NC}"
     echo "  Use default bulk_load.sh without changes"
-elif [ $COMMAS -gt 50 ]; then
+elif [ "${COMMAS:-0}" -gt 50 ]; then
     LIKELY_DELIMITER="COMMA"
     echo -e "  ${GREEN}→ Likely delimiter: COMMA (,)${NC}"
     echo "  Modify bulk_load.sh: FIELDS TERMINATED BY ','"
-elif [ $PIPES -gt 50 ]; then
+elif [ "${PIPES:-0}" -gt 50 ]; then
     LIKELY_DELIMITER="PIPE"
     echo -e "  ${GREEN}→ Likely delimiter: PIPE (|)${NC}"
     echo "  Modify bulk_load.sh: FIELDS TERMINATED BY '|'"
-elif [ $SEMICOLONS -gt 50 ]; then
+elif [ "${SEMICOLONS:-0}" -gt 50 ]; then
     LIKELY_DELIMITER="SEMICOLON"
     echo -e "  ${GREEN}→ Likely delimiter: SEMICOLON (;)${NC}"
     echo "  Modify bulk_load.sh: FIELDS TERMINATED BY ';'"
@@ -127,13 +132,13 @@ echo "    $(echo "$FIRST_LINE" | sed 's/\t/[TAB]/g' | cat -A | head -c 100)"
 echo ""
 
 # Estimated columns
-if [ $TAB_COUNT -gt 0 ]; then
+if [ "${TAB_COUNT:-0}" -gt 0 ]; then
     COLS=$((TAB_COUNT + 1))
     echo -e "  ${GREEN}Estimated columns (tab-based): $COLS${NC}"
-elif [ $COMMA_COUNT -gt 0 ]; then
+elif [ "${COMMA_COUNT:-0}" -gt 0 ]; then
     COLS=$((COMMA_COUNT + 1))
     echo -e "  ${GREEN}Estimated columns (comma-based): $COLS${NC}"
-elif [ $PIPE_COUNT -gt 0 ]; then
+elif [ "${PIPE_COUNT:-0}" -gt 0 ]; then
     COLS=$((PIPE_COUNT + 1))
     echo -e "  ${GREEN}Estimated columns (pipe-based): $COLS${NC}"
 fi
@@ -144,7 +149,7 @@ echo -e "${GREEN}[5] Header Detection${NC}"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 if echo "$FIRST_LINE" | grep -q -E '[a-zA-Z_]{3,}'; then
     HAS_NUMBERS=$(echo "$FIRST_LINE" | grep -o '[0-9]' | wc -l)
-    if [ $HAS_NUMBERS -lt 2 ]; then
+    if [ "${HAS_NUMBERS:-0}" -lt 2 ]; then
         echo -e "  ${YELLOW}⚠ First line looks like a header row${NC}"
         echo "  Modify bulk_load.sh: IGNORE 1 LINES"
     else
@@ -169,7 +174,7 @@ echo "━━━━━━━━━━━━━━━━━━━━━━━━�
 ISSUES=0
 
 # Check for inconsistent column counts
-if [ ! -z "$LIKELY_DELIMITER" ]; then
+if [ -n "$LIKELY_DELIMITER" ] && [ "$LIKELY_DELIMITER" != "SEMICOLON" ]; then
     case $LIKELY_DELIMITER in
         TAB)
             DELIM=$'\t'
@@ -186,7 +191,10 @@ if [ ! -z "$LIKELY_DELIMITER" ]; then
     esac
     
     INCONSISTENT=$(awk -F"$DELIM" 'NF!='$EXPECTED' {print NR}' "$FILE" | head -10 | tr '\n' ',' | sed 's/,$//')
-    if [ ! -z "$INCONSISTENT" ]; then
+    # Escape delimiter for awk if necessary
+    ESCAPED_DELIM=$(printf '%s' "$DELIM" | sed 's/[]\/$*.^[]/\\&/g')
+    INCONSISTENT=$(awk -F"$ESCAPED_DELIM" 'NF!='$EXPECTED' {print NR}' "$FILE" | head -10 | tr '\n' ',' | sed 's/,$//')
+    if [ -n "$INCONSISTENT" ]; then
         echo -e "  ${RED}✗ Inconsistent column counts detected${NC}"
         echo "    Lines with wrong count: $INCONSISTENT"
         ISSUES=$((ISSUES + 1))
@@ -196,8 +204,9 @@ if [ ! -z "$LIKELY_DELIMITER" ]; then
 fi
 
 # Check for blank lines
-BLANK_LINES=$(grep -c '^$' "$FILE" || echo 0)
-if [ $BLANK_LINES -gt 0 ]; then
+BLANK_LINES=$(grep -c '^$' "$FILE" 2>/dev/null || true)
+BLANK_LINES=${BLANK_LINES:-0}
+if [ "${BLANK_LINES:-0}" -gt 0 ]; then
     echo -e "  ${YELLOW}⚠ Found $BLANK_LINES blank lines${NC}"
     echo "    Consider removing: sed -i '/^$/d' $FILE"
     ISSUES=$((ISSUES + 1))
@@ -206,18 +215,19 @@ else
 fi
 
 # Check for very long lines
-MAX_LINE=$(awk '{print length}' "$FILE" | sort -n | tail -1)
-if [ $MAX_LINE -gt 10000 ]; then
+MAX_LINE=$(awk '{print length}' "$FILE" | sort -n | tail -1 || echo 0)
+if [ -n "$MAX_LINE" ] && [ "$MAX_LINE" -gt 10000 ]; then
     echo -e "  ${YELLOW}⚠ Very long line detected: $MAX_LINE characters${NC}"
     echo "    May need to increase max_allowed_packet"
     ISSUES=$((ISSUES + 1))
 else
-    echo -e "  ${GREEN}✓ Line lengths reasonable (max: $MAX_LINE chars)${NC}"
+    echo -e "  ${GREEN}✓ Line lengths reasonable (max: ${MAX_LINE:-0} chars)${NC}"
 fi
 
 # Check for NULL indicators
-NULL_INDICATORS=$(head -100 "$FILE" | grep -c '\\N' || echo 0)
-if [ $NULL_INDICATORS -gt 0 ]; then
+NULL_INDICATORS=$(head -100 "$FILE" | grep -c '\\N' || true)
+NULL_INDICATORS=${NULL_INDICATORS:-0}
+if [ "${NULL_INDICATORS:-0}" -gt 0 ]; then
     echo -e "  ${GREEN}✓ Found \\N NULL indicators (MariaDB native)${NC}"
 fi
 
@@ -228,7 +238,7 @@ echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━�
 echo -e "${CYAN}SUMMARY & RECOMMENDATIONS${NC}"
 echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 
-if [ $ISSUES -eq 0 ]; then
+if [ "${ISSUES:-0}" -eq 0 ]; then
     echo -e "${GREEN}✓ File looks good for bulk loading!${NC}"
 else
     echo -e "${YELLOW}⚠ Found $ISSUES potential issue(s) - review above${NC}"
@@ -276,5 +286,46 @@ fi
 
 echo ""
 echo "To use with bulk_load.sh:"
-echo "  ./bulk_load.sh database table $FILE"
+
+# Build suggested command with detected parameters
+SUGGESTED_CMD="./bulk_load.sh database table $FILE"
+
+# Add format parameter based on detected delimiter
+case $LIKELY_DELIMITER in
+    TAB)
+        SUGGESTED_CMD="$SUGGESTED_CMD --format=tab"
+        ;;
+    COMMA)
+        SUGGESTED_CMD="$SUGGESTED_CMD --format=csv"
+        ;;
+    PIPE)
+        SUGGESTED_CMD="$SUGGESTED_CMD --delimiter='|'"
+        ;;
+    SEMICOLON)
+        SUGGESTED_CMD="$SUGGESTED_CMD --delimiter=';'"
+        ;;
+esac
+
+# Add line terminator if Windows
+if file "$FILE" | grep -q CRLF; then
+    SUGGESTED_CMD="$SUGGESTED_CMD --line-terminator='\\r\\n'"
+fi
+
+# Add skip-header if detected
+if echo "$FIRST_LINE" | grep -q -E '[a-zA-Z_]{3,}'; then
+    HAS_NUMBERS=$(echo "$FIRST_LINE" | grep -o '[0-9]' | wc -l)
+    if [ $HAS_NUMBERS -lt 2 ]; then
+        SUGGESTED_CMD="$SUGGESTED_CMD --skip-header"
+    fi
+fi
+
+echo "  $SUGGESTED_CMD"
+echo ""
+echo "Available options:"
+echo "  --format=FORMAT          Format: csv, tsv, tab, custom"
+echo "  --delimiter=CHAR         Field delimiter (e.g., '|', ',')"
+echo "  --enclosure=CHAR         Field enclosure: \" or '"
+echo "  --line-terminator=STR    Line ending: \\n or \\r\\n"
+echo "  --skip-header            Skip first line (header row)"
+echo "  -u USER -p               MySQL authentication"
 echo ""

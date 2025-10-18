@@ -26,6 +26,9 @@ if [ "$#" -lt 3 ]; then
     echo "  --line-terminator=STR  Line ending: \\n or \\r\\n (default: \\n)"
     echo "  --skip-header          Skip first line (header row)"
     echo ""
+    echo "Table Options:"
+    echo "  --truncate             Delete all records before loading"
+    echo ""
     echo "MySQL Options:"
     echo "  -u USER                MySQL username"
     echo "  -p                     Prompt for password"
@@ -37,6 +40,7 @@ if [ "$#" -lt 3 ]; then
     echo "  $0 mydb mytable data.csv --format=csv       # CSV with auto-detection"
     echo "  $0 mydb mytable data.csv --format=csv --skip-header"
     echo "  $0 mydb mytable data.txt --delimiter='|'    # Custom pipe delimiter"
+    echo "  $0 mydb mytable data.txt --truncate         # Clear table before load"
     echo "  $0 mydb mytable data.txt -u root -p         # With MySQL options"
     exit 1
 fi
@@ -51,7 +55,8 @@ DELIMITER='\t'
 ENCLOSURE=""
 LINE_TERMINATOR='\n'
 IGNORE_LINES=0
-MYSQL_OPTS="-u root -p"  # Default MySQL options
+TRUNCATE_TABLE=false
+MYSQL_OPTS=""  # Default MySQL options
 
 # Parse optional arguments (format options and MySQL options)
 shift 3  # Remove first 3 positional args
@@ -119,6 +124,9 @@ while [[ $# -gt 0 ]]; do
         --skip-header)
             IGNORE_LINES=1
             ;;
+        --truncate)
+            TRUNCATE_TABLE=true
+            ;;
         -*)
             # Treat as MySQL option
             MYSQL_OPTS="$MYSQL_OPTS $1"
@@ -149,8 +157,19 @@ echo -e "Table: ${YELLOW}$TABLE${NC}"
 echo -e "Data File: ${YELLOW}$DATAFILE${NC}"
 echo -e "File Size: ${YELLOW}$(du -h "$DATAFILE" | cut -f1)${NC}"
 echo -e "Format: ${YELLOW}$FORMAT${NC}"
+OPTIONS=""
 if [ "$IGNORE_LINES" -gt 0 ]; then
-    echo -e "Options: ${YELLOW}Skip $IGNORE_LINES header line(s)${NC}"
+    OPTIONS="Skip $IGNORE_LINES header line(s)"
+fi
+if [ "$TRUNCATE_TABLE" = true ]; then
+    if [ -n "$OPTIONS" ]; then
+        OPTIONS="$OPTIONS, Truncate table"
+    else
+        OPTIONS="Truncate table"
+    fi
+fi
+if [ -n "$OPTIONS" ]; then
+    echo -e "Options: ${YELLOW}$OPTIONS${NC}"
 fi
 echo ""
 
@@ -255,8 +274,26 @@ fi
 
 echo ""
 
-# Step 3: Load data
-echo -e "${GREEN}[3/4] Loading data...${NC}"
+# Step 3: Truncate table if requested
+if [ "$TRUNCATE_TABLE" = true ]; then
+    echo -e "${GREEN}[3/5] Truncating table...${NC}"
+    mysql $MYSQL_OPTS -e "USE \`$DATABASE\`; TRUNCATE TABLE \`$TABLE\`;"
+    if [ $? -eq 0 ]; then
+        echo -e "${GREEN}✓ Table truncated${NC}"
+    else
+        echo -e "${RED}✗ Failed to truncate table${NC}"
+        exit 1
+    fi
+    echo ""
+    LOAD_STEP="[4/5]"
+    RESTORE_STEP="[5/5]"
+else
+    LOAD_STEP="[3/4]"
+    RESTORE_STEP="[4/4]"
+fi
+
+# Step 4 (or 3): Load data
+echo -e "${GREEN}${LOAD_STEP} Loading data...${NC}"
 START_TIME=$(date +%s)
 
 # Build LOAD DATA INFILE command with format-specific options
@@ -288,8 +325,8 @@ fi
 
 echo ""
 
-# Step 4: Re-enable keys and restore settings
-echo -e "${GREEN}[4/4] Restoring settings to original values and optimizing table...${NC}"
+# Step 5 (or 4): Re-enable keys and restore settings
+echo -e "${GREEN}${RESTORE_STEP} Restoring settings to original values and optimizing table...${NC}"
 
 if [ "$ENGINE" == "MyISAM" ]; then
     echo -e "Re-enabling keys for MyISAM table..."
