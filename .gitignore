@@ -30,3 +30,4 @@ credentials.json
 *.sql.gz
 *.sql.zip
 dump_*.sql
+schema/

@@ -190,10 +190,10 @@ if [ -n "$LIKELY_DELIMITER" ] && [ "$LIKELY_DELIMITER" != "SEMICOLON" ]; then
             ;;
     esac
     
-    INCONSISTENT=$(awk -F"$DELIM" 'NF!='$EXPECTED' {print NR}' "$FILE" | head -10 | tr '\n' ',' | sed 's/,$//')
+    INCONSISTENT=$(awk -F"$DELIM" 'NF!='$EXPECTED' {print NR}' "$FILE" | head -100 | tr '\n' ',' | sed 's/,$//')
     # Escape delimiter for awk if necessary
     ESCAPED_DELIM=$(printf '%s' "$DELIM" | sed 's/[]\/$*.^[]/\\&/g')
-    INCONSISTENT=$(awk -F"$ESCAPED_DELIM" 'NF!='$EXPECTED' {print NR}' "$FILE" | head -10 | tr '\n' ',' | sed 's/,$//')
+    INCONSISTENT=$(awk -F"$ESCAPED_DELIM" 'NF!='$EXPECTED' {print NR}' "$FILE" | head -100 | tr '\n' ',' | sed 's/,$//')
     if [ -n "$INCONSISTENT" ]; then
         echo -e "  ${RED}✗ Inconsistent column counts detected${NC}"
         echo "    Lines with wrong count: $INCONSISTENT"

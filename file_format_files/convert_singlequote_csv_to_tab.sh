@@ -44,6 +44,13 @@ import sys
 
 input_path, output_path = sys.argv[1], sys.argv[2]
 
+# Allow very large fields (CSV default is 128 KiB).
+try:
+    csv.field_size_limit(sys.maxsize)
+except OverflowError:
+    # On some platforms sys.maxsize is too large; fall back to a big constant.
+    csv.field_size_limit(10 ** 9)
+
 def strip_wrapper(line: str) -> str:
     # Trim whitespace and optional double quotes that wrap the whole record.
     stripped = line.strip()

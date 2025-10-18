@@ -218,6 +218,35 @@ SET col3 = NULLIF(@var3, '');  # <-- Converts empty strings to NULL
 
 ---
 
+### Flattened CSV Without Line Endings
+
+If the provider concatenated every record into a single line, rebuild proper line
+endings before loading:
+
+```bash
+python3 lib/mariadb/file_format_files/fix_flat_csv.py \
+  input_flat.csv repaired.csv \
+  --columns 24 \
+  --keep-header \
+  --record-prefix-regex '^(?:\r)?\d+_\d+,'
+```
+
+Adjust `24` to match your table’s column count. Use `--drop-header` when you plan to
+load with `IGNORE 1 LINES`. If you run the fixer on pre-split chunks, add `--skip-partial`
+so it drops any truncated record at the end of the chunk. When records always start
+with an id like `226517574_53231`, include `^` and optional `\r` in the prefix:
+`--record-prefix-regex '^(?:\r)?\d+_\d+,'`. For CP1252/Latin-1 data, pass
+`--encoding=latin-1 --encoding-errors=replace`.
+
+To convert the repaired CSV to TSV while keeping embedded commas, use:
+
+```bash
+python3 lib/mariadb/file_format_files/convert_csv_to_tab.py \
+  repaired.csv repaired.tsv
+```
+
+---
+
 ### Dates and Timestamps
 
 **Supported date formats in file:**

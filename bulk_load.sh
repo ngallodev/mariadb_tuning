@@ -232,19 +232,7 @@ SET GLOBAL innodb_change_buffer_max_size = 50;
 SET GLOBAL innodb_io_capacity = 2000;
 SET GLOBAL innodb_io_capacity_max = 4000;
 
--- SESSION optimizations (affects this connection)
 USE \`$DATABASE\`;
-SET SESSION sql_log_bin = 0;
-SET SESSION foreign_key_checks = 0;
-SET SESSION unique_checks = 0;
-SET SESSION autocommit = 0;
-SET SESSION bulk_insert_buffer_size = 512 * 1024 * 1024;
-SET SESSION sort_buffer_size = 512 * 1024 * 1024;
-SET SESSION read_buffer_size = 16 * 1024 * 1024;
-SET SESSION read_rnd_buffer_size = 32 * 1024 * 1024;
-SET SESSION join_buffer_size = 32 * 1024 * 1024;
-SET SESSION myisam_sort_buffer_size = 1024 * 1024 * 1024;
-
 SELECT 'EXTREME MODE: Pre-load optimizations applied' AS Status;
 SELECT 'Global flush_log_at_trx_commit set to 0 for maximum speed' AS Info;
 EOF
@@ -303,6 +291,12 @@ SET SESSION sql_log_bin = 0;
 SET SESSION foreign_key_checks = 0;
 SET SESSION unique_checks = 0;
 SET SESSION autocommit = 0;
+SET SESSION bulk_insert_buffer_size = 512 * 1024 * 1024;
+SET SESSION sort_buffer_size = 512 * 1024 * 1024;
+SET SESSION read_buffer_size = 16 * 1024 * 1024;
+SET SESSION read_rnd_buffer_size = 32 * 1024 * 1024;
+SET SESSION join_buffer_size = 32 * 1024 * 1024;
+SET SESSION myisam_sort_buffer_size = 1024 * 1024 * 1024;
 
 LOAD DATA LOCAL INFILE '$DATAFILE'
 INTO TABLE \`$TABLE\`
@@ -311,6 +305,8 @@ LINES TERMINATED BY '$LINE_TERMINATOR'
 IGNORE $IGNORE_LINES LINES;
 
 COMMIT;
+SELECT CONCAT('Warnings: ', @@warning_count) AS Info;
+SHOW WARNINGS LIMIT 25;
 SELECT 'Data loaded successfully' AS Status;
 EOF
 
