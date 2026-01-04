@@ -1,9 +1,48 @@
 # Session Handoff - MariaDB Scripts Project
 
-**Date**: 2025-10-16
-**Session**: Test suite condensation, git setup, contributor cleanup
+**Last Updated**: 2025-11-02
+**Current Session**: File format pipeline integration tests and stage scripts queued
 **Working Directory**: `/usr/local/lib/mariadb/`
 **GitHub**: https://github.com/ngallodev/mariadb_tuning
+
+## ⚠️ IMPORTANT: WORKFLOW METHODOLOGY
+
+**All future Claude Code sessions MUST follow the Batch Approval Workflow:**
+
+1. **NO changes are made until explicitly approved by the user**
+2. **Files are queued on disk, NOT staged in git**
+3. **TodoWrite tracks all planned work upfront**
+4. **Complete summary shown before any action**
+5. **Git objects only created if directly requested**
+
+See CLAUDE.md → "WORKFLOW METHODOLOGY" section for full details.
+
+## ⚠️ MULTI-AGENT ENVIRONMENT
+
+**Important**: Multiple AI agents may work in this repository. Always:
+
+1. **Check before starting**:
+   - `tail -30agent_files/task_status.log` - See recent agent activities
+   - `git status` - Check for queued files or uncommitted changes
+   - Look for agent-specific branches or .git/index.lock
+
+2. **Identify yourself in logs**:
+   - Format: `YYYY-MM-DD HH:MMZ | tag | description - AgentName`
+   - Include agent name in ALLagent_files/task_status.log entries
+
+3. **Respect other agents' work**:
+   - Don't delete queued files (`??` status) without asking
+   - Don't modify files another agent touched in last 2 hours
+   - Coordinate viaagent_files/task_status.log and agent_files/SESSION_HANDOFF.MD
+
+4. **Read coordination guide**:
+   - See CLAUDE.md → "MULTI-AGENT COORDINATION" section
+   - Seeagent_files/MULTI_AGENT_COORDINATION.md for detailed patterns
+
+**Known agents in this repository:**
+- `Claude` - Current AI assistant (Claude Code)
+- `Codex` - Previous AI assistant (OpenAI)
+- `nate` - Repository owner (human developer)
 
 ## Project Overview
 
@@ -45,13 +84,13 @@ MariaDB bulk load optimization toolkit for high-performance multi-role servers (
 - **Status**: Local repository is clean. GitHub contributors graph may be cached (24-48 hour delay expected)
 
 ### 5. Documentation Updates ✓
-- Updated task_status.log with all session activities (with "- Claude" signatures)
+- Updatedagent_files/task_status.log with all session activities (with "- Claude" signatures)
 - Updated .NEXT_TASKS with monitoring task for soharaa removal
 - Updated CLAUDE.md with important conventions:
   - Task log signature requirement
   - File ownership rules (keep nate:nate)
   - Testing philosophy
-- Updated this SESSION_HANDOFF.md
+- Updated this agent_files/SESSION_HANDOFF.MD
 
 ## Current Project State
 
@@ -114,7 +153,7 @@ See `.NEXT_TASKS` file for detailed list:
 ## Important Conventions (MUST READ)
 
 ### Task Status Log Signatures
-**ALWAYS add "- Claude" or "- Codex" signature** when logging to task_status.log:
+**ALWAYS add "- Claude" or "- Codex" signature** when logging toagent_files/task_status.log:
 ```
 Format: YYYY-MM-DD HH:MMZ | tag | description - Claude
 Example: 2025-10-16 08:45Z | testing | Added new tests - Claude
@@ -143,7 +182,7 @@ git status
 git log --oneline -10
 
 # Check recent activities
-tail -30 task_status.log
+tail -30agent_files/task_status.log
 
 # Check next tasks
 cat .NEXT_TASKS
@@ -178,7 +217,7 @@ cd tests && ./run_all_tests.sh
 
 - **Date**: 2025-10-16
 - **Tasks completed**: 5 (test condensation, git setup, contributor cleanup, docs)
-- **Files modified**: 8 (tests, CONTRIBUTORS.md, README.md, .mailmap, task_status.log, .NEXT_TASKS, SESSION_HANDOFF.md, CLAUDE.md)
+- **Files modified**: 8 (tests, CONTRIBUTORS.md, README.md, .mailmap,agent_files/task_status.log, .NEXT_TASKS, agent_files/SESSION_HANDOFF.MD, CLAUDE.md)
 - **Git commits**: 7 commits pushed to GitHub
 - **Git history**: Rewritten to remove incorrect co-author tags
 - **Context usage**: ~130k/200k tokens (65%)
@@ -186,7 +225,7 @@ cd tests && ./run_all_tests.sh
 ## Common Pitfalls to Avoid
 
 1. Don't change file ownership - keep `nate:nate`
-2. Always add "- Claude" signature to task_status.log
+2. Always add "- Claude" signature toagent_files/task_status.log
 3. Don't use `SET GLOBAL sql_log_bin` (SESSION-only variable)
 4. Run tests before committing: `./tests/run_all_tests.sh`
 5. Read CLAUDE.md for important conventions before starting work

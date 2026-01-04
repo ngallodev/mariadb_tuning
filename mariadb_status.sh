@@ -16,8 +16,21 @@ CYAN='\033[0;36m'
 NC='\033[0m' # No Color
 BOLD='\033[1m'
 
-MYSQL_OPTS=${1:-" -p"}
-MYSQL_CMD="sudo mariadb -u root"
+if [ $# -gt 0 ]; then
+    MYSQL_OPTS_STRING=$1
+    read -r -a MYSQL_OPTS <<< "$1"
+else
+    MYSQL_OPTS_STRING="-u root -p"
+    MYSQL_OPTS=(-u root -p)
+fi
+MYSQL_CMD=(sudo mariadb "${MYSQL_OPTS[@]}")
+
+query_value() {
+    local sql="$1"
+    local value
+    value=$("${MYSQL_CMD[@]}" --batch --raw --skip-column-names -e "$sql" 2>/dev/null | head -n 1)
+    printf '%s' "$(echo -n "$value" | tr -d '\r')"
+}
 
 echo -e "${CYAN}${BOLD}╔════════════════════════════════════════════════════════════╗${NC}"
 echo -e "${CYAN}${BOLD}║         MariaDB Mode & Resource Status Monitor            ║${NC}"
@@ -25,11 +38,16 @@ echo -e "${CYAN}${BOLD}╚══════════════════
 echo ""
 
 # Get MariaDB settings
-FLUSH_MODE=$($MYSQL_CMD -sN -e "SELECT @@GLOBAL.innodb_flush_log_at_trx_commit;" 2>/dev/null)
-ADAPTIVE_HASH=$($MYSQL_CMD -sN -e "SELECT @@GLOBAL.innodb_adaptive_hash_index;" 2>/dev/null)
-IO_CAPACITY=$($MYSQL_CMD -sN -e "SELECT @@GLOBAL.innodb_io_capacity;" 2>/dev/null)
-IO_CAPACITY_MAX=$($MYSQL_CMD -sN -e "SELECT @@GLOBAL.innodb_io_capacity_max;" 2>/dev/null)
-BUFFER_POOL=$($MYSQL_CMD -sN -e "SELECT @@GLOBAL.innodb_buffer_pool_size/1024/1024/1024;" 2>/dev/null)
+FLUSH_MODE=$(query_value "SELECT @@GLOBAL.innodb_flush_log_at_trx_commit;")
+ADAPTIVE_HASH=$(query_value "SELECT @@GLOBAL.innodb_adaptive_hash_index;")
+IO_CAPACITY=$(query_value "SELECT @@GLOBAL.innodb_io_capacity;")
+IO_CAPACITY_MAX=$(query_value "SELECT @@GLOBAL.innodb_io_capacity_max;")
+BUFFER_POOL=$(query_value "SELECT @@GLOBAL.innodb_buffer_pool_size/1024/1024/1024;")
+
+# Normalize numeric values for safe comparisons
+IO_CAPACITY=${IO_CAPACITY%%[!0-9]*}
+IO_CAPACITY_MAX=${IO_CAPACITY_MAX%%[!0-9]*}
+
 
 if [ -z "$FLUSH_MODE" ]; then
     echo -e "${RED}Error: Could not connect to MariaDB${NC}"
@@ -43,10 +61,10 @@ echo -e "${BOLD}━━━━━━━━━━━━━━━━━━━━━�
 echo -e "${BOLD}CURRENT MODE DETECTION${NC}"
 echo -e "${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 
-if [ "$FLUSH_MODE" = "0" ] && [ "$IO_CAPACITY" -ge "1000" ]; then
+if [ "$FLUSH_MODE" = "0" ] && [ -n "$IO_CAPACITY" ] && [ "$IO_CAPACITY" -ge "1000" ]; then
     echo -e "Mode: ${YELLOW}${BOLD}⚡ EXTREME MODE (Bulk Loading Active)${NC}"
     MODE="extreme"
-elif [ "$FLUSH_MODE" = "1" ] && [ "$IO_CAPACITY" -lt "500" ]; then
+elif [ "$FLUSH_MODE" = "1" ] && [ -n "$IO_CAPACITY" ] && [ "$IO_CAPACITY" -lt "500" ]; then
     echo -e "Mode: ${GREEN}${BOLD}✓ CONSERVATIVE MODE (Normal Operations)${NC}"
     MODE="conservative"
 else
@@ -77,17 +95,21 @@ else
 fi
 
 printf "%-40s" "innodb_io_capacity:"
-if [ "$IO_CAPACITY" -ge "1000" ]; then
+if [ -n "$IO_CAPACITY" ] && [ "$IO_CAPACITY" -ge "1000" ]; then
     echo -e "${YELLOW}$IO_CAPACITY (EXTREME)${NC}"
-else
+elif [ -n "$IO_CAPACITY" ]; then
     echo -e "${GREEN}$IO_CAPACITY (CONSERVATIVE)${NC}"
+else
+    echo -e "${BLUE}Unavailable${NC}"
 fi
 
 printf "%-40s" "innodb_io_capacity_max:"
-if [ "$IO_CAPACITY_MAX" -ge "3000" ]; then
+if [ -n "$IO_CAPACITY_MAX" ] && [ "$IO_CAPACITY_MAX" -ge "3000" ]; then
     echo -e "${YELLOW}$IO_CAPACITY_MAX (EXTREME)${NC}"
-else
+elif [ -n "$IO_CAPACITY_MAX" ]; then
     echo -e "${GREEN}$IO_CAPACITY_MAX (CONSERVATIVE)${NC}"
+else
+    echo -e "${BLUE}Unavailable${NC}"
 fi
 
 printf "%-40s" "innodb_buffer_pool_size:"
@@ -104,7 +126,8 @@ echo -e "${BOLD}━━━━━━━━━━━━━━━━━━━━━�
 TOTAL_MEM=$(free -g | awk '/^Mem:/ {print $2}')
 USED_MEM=$(free -g | awk '/^Mem:/ {print $3}')
 AVAIL_MEM=$(free -g | awk '/^Mem:/ {print $7}')
-MYSQL_MEM=$(ps aux | grep mysqld | grep -v grep | awk '{sum+=$6} END {print sum/1024/1024}' | xargs printf "%.1f")
+MYSQL_MEM=$(ps aux | awk '/mysql/ && !/grep/ {sum+=$6} END {printf "%.1f\n", sum/1024/1024}')
+
 
 echo -e "${BOLD}Memory:${NC}"
 echo "  Total:          ${TOTAL_MEM}GB"
@@ -121,13 +144,57 @@ echo ""
 
 # CPU usage
 CPU_COUNT=$(nproc)
-MYSQL_CPU=$(ps aux | grep mysqld | grep -v grep | awk '{print $3}' | head -1)
-LOAD_AVG=$(uptime | awk -F'load average:' '{print $2}')
+PROCESS_NAMES=(mysqld mariadbd postgres)
+
+sum_cpu_for_process() {
+    local name="$1"
+    local pids cpu_total
+
+    if ! command -v pgrep >/dev/null 2>&1; then
+        printf "0.00"
+        return
+    fi
+
+    pids=$(pgrep -d, -x "$name" 2>/dev/null)
+    if [ -z "$pids" ]; then
+        pids=$(pgrep -d, -f "$name" 2>/dev/null)
+    fi
+
+    if [ -n "$pids" ]; then
+        cpu_total=$(ps -o %cpu= -p "$pids" | awk '{sum+=$1} END {if (sum == "") sum = 0; printf "%.2f", sum}')
+        printf "%s" "$cpu_total"
+    else
+        printf "0.00"
+    fi
+}
+
+declare -A CPU_SUMS
+for name in "${PROCESS_NAMES[@]}"; do
+    CPU_SUMS["$name"]=$(sum_cpu_for_process "$name")
+done
+
+MYSQL_CPU="${CPU_SUMS[mysqld]}"
+if [ -z "$MYSQL_CPU" ] || [ "$MYSQL_CPU" = "0.00" ]; then
+    MYSQL_CPU="${CPU_SUMS[mariadbd]}"
+fi
+if [ -z "$MYSQL_CPU" ]; then
+    MYSQL_CPU="0.00"
+fi
+
+LOAD_AVG=$(uptime | awk -F'load average[s]*:' '{gsub(/^[[:space:]]+|[[:space:]]+$/, "", $2); print $2}')
 
 echo -e "${BOLD}CPU:${NC}"
 echo "  Total cores:    $CPU_COUNT"
 echo "  MariaDB usage:  ${MYSQL_CPU}%"
-echo "  Load average:  $LOAD_AVG"
+
+for name in "${PROCESS_NAMES[@]}"; do
+    usage="${CPU_SUMS[$name]}"
+    if [ -n "$usage" ] && [ "$usage" != "0.00" ]; then
+        printf "  %-15s %s%%\n" "${name}:" "$usage"
+    fi
+done
+
+echo "  Load average:   $LOAD_AVG"
 
 if [ "$MODE" = "extreme" ]; then
     echo -e "  Expected:       ${YELLOW}200-800% during bulk loads (2-8 cores)${NC}"
@@ -144,8 +211,10 @@ if command -v iostat &> /dev/null; then
 fi
 
 # Active connections
-CONNECTIONS=$($MYSQL_CMD -sN -e "SHOW STATUS LIKE 'Threads_connected';" 2>/dev/null | awk '{print $2}')
-MAX_CONNECTIONS=$($MYSQL_CMD -sN -e "SHOW VARIABLES LIKE 'max_connections';" 2>/dev/null | awk '{print $2}')
+CONNECTIONS=$(query_value "SELECT VARIABLE_VALUE FROM information_schema.GLOBAL_STATUS WHERE VARIABLE_NAME='Threads_connected';")
+MAX_CONNECTIONS=$(query_value "SELECT VARIABLE_VALUE FROM information_schema.GLOBAL_VARIABLES WHERE VARIABLE_NAME='MAX_CONNECTIONS';")
+CONNECTIONS=${CONNECTIONS%%[!0-9]*}
+MAX_CONNECTIONS=${MAX_CONNECTIONS%%[!0-9]*}
 
 echo -e "${BOLD}Connections:${NC}"
 echo "  Active:         $CONNECTIONS"
@@ -157,7 +226,7 @@ echo -e "${BOLD}━━━━━━━━━━━━━━━━━━━━━�
 echo -e "${BOLD}INNODB BUFFER POOL STATUS${NC}"
 echo -e "${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 
-$MYSQL_CMD -e "
+"${MYSQL_CMD[@]}" -e "
 SELECT 
     CONCAT(ROUND(SUM(data_length + index_length) / 1024 / 1024 / 1024, 2), ' GB') AS 'Total Data Size',
     CONCAT(ROUND(@@innodb_buffer_pool_size / 1024 / 1024 / 1024, 2), ' GB') AS 'Buffer Pool Size',
@@ -199,5 +268,5 @@ echo -e "${BOLD}━━━━━━━━━━━━━━━━━━━━━�
 echo "Switch to extreme mode:    mysql -u root -p < mariadb_preload.sql"
 echo "Restore conservative:      mysql -u root -p < mariadb_postload.sql"
 echo "Automated bulk load:       ./bulk_load.sh database table file.txt"
-echo "Watch resources:           watch -n 2 './mariadb_status.sh \"$MYSQL_OPTS\"'"
+echo "Watch resources:           watch -n 2 './mariadb_status.sh \"$MYSQL_OPTS_STRING\"'"
 echo ""

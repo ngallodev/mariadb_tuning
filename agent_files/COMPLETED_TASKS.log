@@ -1,0 +1,7 @@
+# Completed Tasks Log
+# Append-only record of tasks finished by Codex.
+
+2024-11-02 - Implemented staged SQL/CSV preprocessing scripts and supporting utilities [Codex]
+2024-11-02 - Expanded in-script documentation and enhanced stage runner for mixed inputs [Codex]
+2024-11-02 - Updated check_file_format.sh with pipeline guidance and helper summaries [Codex]
+2024-11-02 - Reviewed repo structure and Claude-specific guidance to align shared understanding [Codex]

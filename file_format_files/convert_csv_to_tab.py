@@ -20,14 +20,14 @@ def main() -> None:
     parser.add_argument("output", type=Path, help="Destination path for the TSV file.")
     parser.add_argument(
         "--encoding",
-        default="utf-8",
-        help="Input file encoding (default utf-8).",
+        default="latin-1",
+        help="Input file encoding (default latin-1, which handles any byte sequence).",
     )
     parser.add_argument(
         "--encoding-errors",
         choices=["strict", "ignore", "replace"],
-        default="strict",
-        help="Error handling strategy for decoding (default strict).",
+        default="replace",
+        help="Error handling strategy for decoding (default replace).",
     )
     args = parser.parse_args()
 

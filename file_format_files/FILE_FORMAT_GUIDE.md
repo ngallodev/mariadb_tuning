@@ -245,6 +245,14 @@ python3 lib/mariadb/file_format_files/convert_csv_to_tab.py \
   repaired.csv repaired.tsv
 ```
 
+For SQL-style extracts where each row is wrapped in parentheses and uses single quotes,
+run:
+
+```bash
+python3 lib/mariadb/file_format_files/convert_parenthesized_sql_to_tab.py \
+  values_dump.txt values_dump.tsv
+```
+
 ---
 
 ### Dates and Timestamps
