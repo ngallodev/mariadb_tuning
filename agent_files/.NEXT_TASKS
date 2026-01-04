@@ -1,5 +1,5 @@
 # Next Session Priority Tasks
-# Read SESSION_HANDOFF.md for full context
+# Read agent_files/SESSION_HANDOFF.MD for full context
 
 ## MONITORING TASKS
 
@@ -81,7 +81,7 @@ Status: Not started
 ## IMPORTANT CONVENTIONS
 
 ### Task Status Log Signatures
-**ALWAYS add signature** when logging to task_status.log:
+**ALWAYS add signature** when logging toagent_files/task_status.log:
 - Format: `YYYY-MM-DD HH:MMZ | tag | description - Claude`
 - Example: `2025-10-16 08:45Z | testing | Added new tests - Claude`
 
@@ -100,7 +100,7 @@ Status: Not started
 
 Working Directory: /usr/local/lib/mariadb
 Test Command: cd tests && ./run_all_tests.sh
-Documentation: cat SESSION_HANDOFF.md
+Documentation: cat agent_files/SESSION_HANDOFF.MD
 Known Issues: cat codex.md
-Task Log: tail -30 task_status.log
+Task Log: tail -30agent_files/task_status.log
 Git Status: git log --oneline -10

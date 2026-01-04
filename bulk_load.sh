@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # MariaDB Bulk Data Load Script
-# Usage: ./bulk_load.sh <database> <table> <data_file.txt>
+# Usage: ./bulk_load.sh <database> <table> <data_file_or_glob>
 #
 # This script optimizes MariaDB for bulk loading, loads data, and restores settings
 #
@@ -17,7 +17,7 @@ NC='\033[0m' # No Color
 # Check arguments
 if [ "$#" -lt 3 ]; then
     echo -e "${RED}Error: Missing arguments${NC}"
-    echo "Usage: $0 <database> <table> <data_file> [options]"
+    echo "Usage: $0 <database> <table> <data_file_or_glob> [options]"
     echo ""
     echo "Format Options:"
     echo "  --format=FORMAT        Format type: csv, tsv, tab, custom (default: tab)"
@@ -35,6 +35,10 @@ if [ "$#" -lt 3 ]; then
     echo "  -h HOST                MySQL host"
     echo "  (any other mysql client options)"
     echo ""
+    echo "Multiple Files:"
+    echo "  Pass a quoted glob pattern (e.g. 'chunks/*.tsv') or repeat positional"
+    echo "  file arguments; matching files are loaded sequentially."
+    echo ""
     echo "Examples:"
     echo "  $0 mydb mytable data.txt                    # Tab-delimited (default)"
     echo "  $0 mydb mytable data.csv --format=csv       # CSV with auto-detection"
@@ -42,12 +46,13 @@ if [ "$#" -lt 3 ]; then
     echo "  $0 mydb mytable data.txt --delimiter='|'    # Custom pipe delimiter"
     echo "  $0 mydb mytable data.txt --truncate         # Clear table before load"
     echo "  $0 mydb mytable data.txt -u root -p         # With MySQL options"
+    echo "  $0 mydb mytable 'output/chunks/*.tsv'       # Load many chunked TSV files"
     exit 1
 fi
 
 DATABASE=$1
 TABLE=$2
-DATAFILE=$3
+shift 2
 
 # Default format settings (tab-delimited for backward compatibility)
 FORMAT="tab"
@@ -56,10 +61,15 @@ ENCLOSURE=""
 LINE_TERMINATOR='\n'
 IGNORE_LINES=0
 TRUNCATE_TABLE=false
-MYSQL_OPTS=""  # Default MySQL options
+declare -a MYSQL_OPTS=()
+declare -a DATA_PATTERNS=()
 
-# Parse optional arguments (format options and MySQL options)
-shift 3  # Remove first 3 positional args
+if [[ $# -eq 0 ]]; then
+    echo -e "${RED}Error: Missing data file or glob pattern${NC}"
+    exit 1
+fi
+
+# Parse optional arguments (format options, MySQL options, additional files)
 while [[ $# -gt 0 ]]; do
     case $1 in
         --format=*)
@@ -127,18 +137,44 @@ while [[ $# -gt 0 ]]; do
         --truncate)
             TRUNCATE_TABLE=true
             ;;
+        --help)
+            echo "Usage: $0 <database> <table> <data_file_or_glob> [options]"
+            exit 0
+            ;;
+        --)
+            shift
+            while [[ $# -gt 0 ]]; do
+                DATA_PATTERNS+=("$1")
+                shift
+            done
+            break
+            ;;
         -*)
             # Treat as MySQL option
-            MYSQL_OPTS="$MYSQL_OPTS $1"
+            MYSQL_OPTS+=("$1")
+            case $1 in
+                -u|-h|-P|-S|-D|-e)
+                    if [[ $# -gt 1 ]]; then
+                        shift
+                        MYSQL_OPTS+=("$1")
+                    fi
+                    ;;
+                -p)
+                    # Prompt flag (optionally packed with password), nothing additional required.
+                    ;;
+            esac
             ;;
         *)
-            # Unknown option
-            echo -e "${RED}Error: Unknown option '$1'${NC}"
-            exit 1
+            DATA_PATTERNS+=("$1")
             ;;
     esac
     shift
 done
+
+if [[ ${#DATA_PATTERNS[@]} -eq 0 ]]; then
+    echo -e "${RED}Error: No data files or glob patterns supplied${NC}"
+    exit 1
+fi
 
 # Check if data file exists
 if [ ! -f "$DATAFILE" ]; then
@@ -306,7 +342,7 @@ IGNORE $IGNORE_LINES LINES;
 
 COMMIT;
 SELECT CONCAT('Warnings: ', @@warning_count) AS Info;
-SHOW WARNINGS LIMIT 25;
+SHOW WARNINGS LIMIT 250;
 SELECT 'Data loaded successfully' AS Status;
 EOF
 

@@ -40,7 +40,8 @@ This configuration uses a **smart dual-mode approach** for resource management:
 6. **QUICK_REFERENCE.md** - Side-by-side comparison of conservative vs extreme modes
 7. **file_format_files/fix_flat_csv.py** - Repairs flattened CSV exports that are missing line endings
 8. **file_format_files/convert_csv_to_tab.py** - Converts standard CSV (double-quoted) to TSV while preserving commas
-9. **schema/create_fling_body_table.sql** - Starter table definition for the fling_body dataset
+9. **file_format_files/convert_parenthesized_sql_to_tab.py** - Converts SQL-style value tuples into TSV
+
 
 ## Quick Start
 

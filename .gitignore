@@ -9,6 +9,7 @@ backup_*/
 *.temp
 .DS_Store
 Thumbs.db
+tmp/*
 
 # Test artifacts
 tests/tmp/
@@ -31,3 +32,16 @@ credentials.json
 *.sql.zip
 dump_*.sql
 schema/
+*.dump*
+
+# Volatile session/initialization data (NOT coordination files)
+claude_sessions/
+claude_init_data.json
+*.claude_session
+*.codex_session
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
